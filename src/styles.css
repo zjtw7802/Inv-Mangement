@@ -16,3 +16,8 @@ select,input,button{font:inherit}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{border:0;background:var(--pri);color:#fff;padding:11px 12px;border-radius:10px;font-weight:700;width:100%}.ghost{border:1px solid var(--line);background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
 .action{display:flex;gap:6px;margin-top:8px}.action button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.toolbar-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+.status-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.filter-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-top:8px}
+.status-row .chip,.filter-row .chip{padding:7px 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

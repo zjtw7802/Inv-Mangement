@@ -37,11 +37,37 @@ function pillByLevel(level) {
   return '<span class="pill safe">安全</span>';
 }
 
+
+function statusKey(item) {
+  const left = daysLeft(actualExpiry(item));
+  if (left < 0) return 'expired';
+  if (left <= 7) return 'near';
+  if (left <= 30) return 'soon';
+  return 'safe';
+}
+
+function matchesQuickFilter(item, filter) {
+  if (!filter || filter === 'all') return true;
+  if (filter === 'opened') return item.opened;
+  if (filter === 'sealed') return !item.opened;
+  if (filter === 'skincare') return item.category === '护肤';
+  if (filter === 'makeup') return item.category === '彩妆';
+  if (filter === 'expired') return statusKey(item) === 'expired';
+  if (filter === 'near') return statusKey(item) === 'near';
+  if (filter === 'soon') return statusKey(item) === 'soon';
+  if (filter === 'safe') return statusKey(item) === 'safe';
+  return true;
+}
+
 function inventoryList() {
-  const items = [...state.products];
+  let items = [...state.products].filter(item => matchesQuickFilter(item, state.settings.quickFilter || 'all'));
   if (state.settings.sortBy === 'price') items.sort((a, b) => b.price - a.price);
   else if (state.settings.sortBy === 'expiry') items.sort((a, b) => daysLeft(actualExpiry(a)) - daysLeft(actualExpiry(b)));
   else items.sort((a, b) => priorityScore(b) - priorityScore(a));
+
+  if (!items.length) {
+    return '<div class="card muted">当前筛选下暂无产品，试试切换标签。</div>';
+  }
 
   return items.map(item => {
     const expiry = actualExpiry(item);
@@ -107,8 +133,32 @@ function settingsPanel() {
 }
 
 function render(screen = 'inventory') {
+  const allCount = state.products.length;
+  const nearCount = state.products.filter(i => statusKey(i) === 'near').length;
+  const soonCount = state.products.filter(i => statusKey(i) === 'soon').length;
+  const safeCount = state.products.filter(i => statusKey(i) === 'safe').length;
+
+  const quick = state.settings.quickFilter || 'all';
+  const quickBtn = (key, label) => `<button class="chip ${quick===key?'active':''}" data-quick-filter="${key}">${label}</button>`;
+
   els.screens.inventory.innerHTML = `
-    <div class="card"><div class="row"><strong>今日建议</strong><span class="pill warn">${state.products.filter(i => daysLeft(actualExpiry(i)) <= 30).length} 件需处理</span></div><p class="muted">优先处理临期 + 已开封 + 高单价产品。</p></div>
+    <div class="toolbar-wrap">
+      <div class="toolbar status-row">
+        ${quickBtn('all', `● 全部 ${allCount}`)}
+        ${quickBtn('near', `● 临期 ${nearCount}`)}
+        ${quickBtn('soon', `● 即将 ${soonCount}`)}
+        ${quickBtn('safe', `● 安全 ${safeCount}`)}
+      </div>
+      <div class="toolbar filter-row">
+        ${quickBtn('all', `全部 ${allCount}`)}
+        ${quickBtn('opened', '已开封')}
+        ${quickBtn('sealed', '未开封')}
+        ${quickBtn('skincare', '护肤')}
+        ${quickBtn('makeup', '彩妆')}
+        ${quickBtn('expired', '已过期')}
+      </div>
+    </div>
+    <div class="card"><div class="row"><strong>我的囤货</strong><span class="pill warn">${state.products.filter(i => daysLeft(actualExpiry(i)) <= 30).length} 件需处理</span></div><p class="muted">支持快速过滤：状态 / 开封状态 / 品类。</p></div>
     ${inventoryList()}
   `;
 
@@ -138,6 +188,14 @@ els.tabs.forEach(tab => tab.addEventListener('click', () => {
 }));
 
 els.screens.inventory.addEventListener('click', (e) => {
+  const filterBtn = e.target.closest('button[data-quick-filter]');
+  if (filterBtn) {
+    state.settings.quickFilter = filterBtn.dataset.quickFilter;
+    save();
+    render(currentScreen);
+    return;
+  }
+
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
   const id = Number(btn.dataset.id);

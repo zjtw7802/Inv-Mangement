@@ -8,7 +8,7 @@ const seed = {
   ],
   usageLogs: [],
   emptyLogs: [],
-  settings: { mode: 'simple', sortBy: 'priority' }
+  settings: { mode: 'simple', sortBy: 'priority', quickFilter: 'all' }
 };
 
 export function loadState() {
