@@ -15,7 +15,25 @@
     </header>
 
     <main class="content">
-      <section id="screen-inventory" class="screen"></section>
+      <section id="screen-inventory" class="screen">
+        <div class="toolbar-wrap" id="inventoryQuickFilters">
+          <div class="toolbar status-row">
+            <button class="chip active" data-quick-filter="all">● 全部</button>
+            <button class="chip" data-quick-filter="near">● 临期</button>
+            <button class="chip" data-quick-filter="soon">● 即将</button>
+            <button class="chip" data-quick-filter="safe">● 安全</button>
+          </div>
+          <div class="toolbar filter-row">
+            <button class="chip active" data-quick-filter="all">全部</button>
+            <button class="chip" data-quick-filter="opened">已开封</button>
+            <button class="chip" data-quick-filter="sealed">未开封</button>
+            <button class="chip" data-quick-filter="skincare">护肤</button>
+            <button class="chip" data-quick-filter="makeup">彩妆</button>
+            <button class="chip" data-quick-filter="expired">已过期</button>
+          </div>
+        </div>
+        <div class="card muted">加载中...</div>
+      </section>
       <section id="screen-usage" class="screen hidden"></section>
       <section id="screen-empty" class="screen hidden"></section>
       <section id="screen-settings" class="screen hidden"></section>
