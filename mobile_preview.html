@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>美妆囤货效期管理 - 可交互预览</title>
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--text:#1f2430;--muted:#697286;--pri:#ff4d8d;--line:#e9edf5;--warn:#ffa439;--danger:#ff4b55}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;background:linear-gradient(180deg,#ffd7e8,#eef2ff);min-height:100vh;display:grid;place-items:center;padding:20px;color:var(--text)}
+    .phone{width:390px;max-width:100%;height:820px;border:10px solid #111;border-radius:34px;background:var(--bg);box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column}
+    .status{height:28px;background:#111;color:#fff;font-size:12px;display:flex;justify-content:space-between;align-items:center;padding:0 14px}
+    .header{background:#fff;padding:12px 16px;border-bottom:1px solid var(--line)} .header h1{margin:0;font-size:18px}.header p{margin:4px 0 0;color:var(--muted);font-size:12px}
+    .content{flex:1;overflow:auto;padding:14px 14px 90px}.screen.hidden{display:none}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+    .row{display:flex;justify-content:space-between;gap:8px;align-items:center}.muted{color:var(--muted);font-size:12px;margin:6px 0 0}
+    .pill{font-size:11px;border-radius:999px;padding:4px 8px;color:#fff}.p0{background:var(--danger)}.p1{background:var(--warn)}.p2{background:#f7c553;color:#4b3a00}
+    .btn{border:0;border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600;background:var(--pri);color:#fff}.btn.secondary{background:#eef1fa;color:#394355}.btn.ghost{background:#fff;color:#444;border:1px solid var(--line)}.btn.small{padding:6px 8px;font-size:12px}
+    form{display:grid;gap:10px} input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff} .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:#fff}.tab{border:0;background:transparent;padding:10px 4px 12px;color:#7e879b;cursor:pointer}.tab.active{color:var(--pri);font-weight:700}
+    .toast{position:absolute;left:50%;transform:translateX(-50%);bottom:92px;background:#121725;color:#fff;padding:8px 12px;border-radius:999px;font-size:12px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+    .wrap{position:relative;height:100%}
+    .modal{position:fixed;inset:0;background:rgba(17,22,34,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:20}
+    .modal.hidden{display:none}
+    .sheet{width:100%;max-width:390px;background:#fff;border-radius:16px 16px 12px 12px;padding:12px;border:1px solid var(--line)}
+    .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .x{border:0;background:#f1f3f8;border-radius:8px;padding:6px 8px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>5G 🔋</span></div>
+    <header class="header"><h1 id="title">Today</h1><p id="subtitle">双效期提醒：未开封 + 开封 PAO</p></header>
+    <div class="wrap">
+      <main class="content">
+        <section id="today" class="screen">
+          <div class="card"><div class="row"><strong>今日临期提醒</strong><span class="pill p1" id="todayBadge">2 件需处理</span></div><p class="muted">优先处理临期且单价高的已开封产品。</p></div>
+          <div id="priorityList"></div>
+          <div class="card row"><button class="btn" id="quickAdd">+ 新增单品</button><button class="btn secondary" id="quickOpen">一键标记开封</button></div>
+        </section>
+        <section id="stock" class="screen hidden"><div id="stockList"></div></section>
+        <section id="stats" class="screen hidden">
+          <div class="card row"><span>本月预计过期金额</span><strong id="lossValue">¥0</strong></div>
+          <div class="card row"><span>库存总件数</span><strong id="countValue">0</strong></div>
+          <div class="card row"><span>已开封占比</span><strong id="openRate">0%</strong></div>
+        </section>
+        <section id="me" class="screen hidden"><div class="card"><strong>提醒策略</strong><p class="muted">未开封：60/30/7天；开封后：30/14/3天。</p><button class="btn ghost small">导出CSV（高级）</button></div></section>
+      </main>
+      <div class="toast" id="toast"></div>
+
+      <div id="addModal" class="modal hidden" aria-hidden="true">
+        <div class="sheet">
+          <div class="sheet-head"><strong>新增单品</strong><button class="x" id="closeModal" type="button">关闭</button></div>
+          <form id="addForm">
+            <input name="brand" placeholder="品牌（如：理肤泉）" required />
+            <input name="name" placeholder="品名（如：B5修护霜）" required />
+            <div class="grid2"><input name="expiry" type="date" required /><select name="pao"><option value="6">PAO 6M</option><option value="12" selected>PAO 12M</option><option value="24">PAO 24M</option></select></div>
+            <div class="grid2"><input name="price" type="number" min="0" placeholder="价格(元)" /><input name="qty" type="number" min="1" value="1" /></div>
+            <button class="btn" type="submit">保存并加入库存</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-target="today">Today</button>
+      <button class="tab" data-target="stock">库存</button>
+      <button class="tab" data-target="stats">统计</button>
+      <button class="tab" data-target="me">我的</button>
+    </nav>
+  </div>
+
+<script>
+(() => {
+  const state = {
+    items: [
+      {id:1,brand:'SK-II',name:'神仙水',days:5,opened:true,price:1540,qty:1},
+      {id:2,brand:'雅诗兰黛',name:'小棕瓶',days:18,opened:true,price:980,qty:1},
+      {id:3,brand:'科颜氏',name:'高保湿面霜',days:7,opened:false,price:420,qty:2}
+    ],
+    nextId: 4
+  };
+
+  const screens=[...document.querySelectorAll('.screen')];
+  const tabs=[...document.querySelectorAll('.tab')];
+  const title=document.getElementById('title');
+  const subtitle=document.getElementById('subtitle');
+  const map={today:['Today','双效期提醒：未开封 + 开封 PAO'],stock:['库存','按状态筛选：未开封 / 已开封 / 临期'],stats:['统计','追踪过期损耗与消耗效率'],me:['我的','提醒策略、导出、会员']};
+
+  const toast=(msg)=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)};
+
+  const level=(d)=>d<=0?'p0':(d<=7?'p1':'p2');
+  const levelText=(d)=>d<=0?'已过期':(d<=7?'7天内到期':'30天内到期');
+
+  function openScreen(id){
+    screens.forEach(s=>s.classList.toggle('hidden',s.id!==id));
+    tabs.forEach(t=>t.classList.toggle('active',t.dataset.target===id));
+    title.textContent=map[id][0]; subtitle.textContent=map[id][1];
+  }
+
+  const addModal=document.getElementById('addModal');
+  const showAddModal=()=>{addModal.classList.remove('hidden'); addModal.setAttribute('aria-hidden','false');};
+  const hideAddModal=()=>{addModal.classList.add('hidden'); addModal.setAttribute('aria-hidden','true');};
+
+  function render(){
+    const sorted=[...state.items].sort((a,b)=>a.days-b.days||b.price-a.price);
+    document.getElementById('priorityList').innerHTML=sorted.slice(0,3).map(i=>`
+      <article class="card" data-id="${i.id}">
+        <div class="row"><strong>${i.brand} ${i.name}</strong><span class="pill ${level(i.days)}">${levelText(i.days)}</span></div>
+        <p class="muted">${i.opened?'已开封':'未开封'} · 剩余 ${i.qty} 件 · 约 ${i.days} 天到期</p>
+        <div class="row"><button class="btn ghost small" data-action="open" data-id="${i.id}">标记开封</button><button class="btn secondary small" data-action="used" data-id="${i.id}">标记用完</button></div>
+      </article>
+    `).join('');
+
+    document.getElementById('stockList').innerHTML=sorted.map(i=>`
+      <article class="card row"><div><strong>${i.brand} ${i.name}</strong><p class="muted">${i.opened?'已开封':'未开封'} · ${i.qty} 件 · ¥${i.price}</p></div><span class="pill ${level(i.days)}">${Math.max(i.days,0)}天</span></article>
+    `).join('');
+
+    const total=state.items.reduce((s,i)=>s+i.qty,0);
+    const opened=state.items.filter(i=>i.opened).length;
+    const loss=state.items.filter(i=>i.days<=7).reduce((s,i)=>s+i.price,0);
+    document.getElementById('todayBadge').textContent=`${state.items.filter(i=>i.days<=7).length} 件需处理`;
+    document.getElementById('lossValue').textContent=`¥${loss}`;
+    document.getElementById('countValue').textContent=String(total);
+    document.getElementById('openRate').textContent=state.items.length?`${Math.round((opened/state.items.length)*100)}%`:'0%';
+  }
+
+  tabs.forEach(t=>t.addEventListener('click',()=>openScreen(t.dataset.target)));
+
+  document.getElementById('priorityList').addEventListener('click',(e)=>{
+    const btn=e.target.closest('button[data-action]');
+    if(!btn) return;
+    const id=Number(btn.dataset.id);
+    const idx=state.items.findIndex(i=>i.id===id);
+    if(idx<0) return;
+    if(btn.dataset.action==='open'){
+      state.items[idx].opened=true;
+      state.items[idx].days=Math.max(state.items[idx].days-3,1);
+      toast(`已标记开封：${state.items[idx].name}`);
+    }else{
+      const name=state.items[idx].name;
+      state.items.splice(idx,1);
+      toast(`已记录空瓶：${name}`);
+    }
+    render();
+  });
+
+  document.getElementById('quickAdd').addEventListener('click',showAddModal);
+  document.getElementById('closeModal').addEventListener('click',hideAddModal);
+  addModal.addEventListener('click',(e)=>{ if(e.target===addModal) hideAddModal(); });
+  document.getElementById('quickOpen').addEventListener('click',()=>{
+    if(!state.items.length) return toast('暂无库存可操作');
+    state.items[0].opened=true; state.items[0].days=Math.max(state.items[0].days-3,1);
+    toast(`已标记开封：${state.items[0].name}`); render();
+  });
+
+  document.getElementById('addForm').addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    state.items.unshift({id:state.nextId++,brand:String(f.get('brand')),name:String(f.get('name')),days:30,opened:false,price:Number(f.get('price')||0),qty:Number(f.get('qty')||1)});
+    e.target.reset();
+    hideAddModal(); openScreen('today'); render(); toast('保存成功，已加入库存');
+  });
+
+  render();
+  showAddModal();
+})();
+</script>
+</body>
+</html>
