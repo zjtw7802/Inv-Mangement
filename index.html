@@ -3,207 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BeautyGuard - 交互原型 V2</title>
-  <style>
-    :root{--bg:#f7f4f2;--card:#fff;--text:#2b2b2b;--muted:#7f7b78;--pri:#c89274;--line:#ece6e2;--ok:#7dad8f;--warn:#e4a86f;--danger:#e15c52}
-    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",sans-serif;background:#efebe8;min-height:100vh;display:grid;place-items:center;padding:20px;color:var(--text)}
-    .phone{width:390px;max-width:100%;height:830px;border-radius:34px;border:10px solid #111;background:var(--bg);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.18)}
-    .status{height:28px;background:#111;color:#fff;font-size:12px;display:flex;justify-content:space-between;align-items:center;padding:0 14px}
-    .header{padding:12px 16px;background:#fff;border-bottom:1px solid var(--line)} .header h1{margin:0;font-size:20px}.header p{margin:3px 0 0;color:var(--muted);font-size:12px}
-    .content{flex:1;overflow:auto;padding:12px 12px 90px}.screen.hidden{display:none}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
-    .row{display:flex;justify-content:space-between;align-items:center;gap:8px}.muted{color:var(--muted);font-size:12px}.title{font-weight:700;font-size:18px}
-    .pill{font-size:11px;border-radius:999px;padding:3px 8px;background:#f3ece7}.p0{color:#fff;background:var(--danger)}.p1{color:#fff;background:var(--warn)}.p2{background:#e8f1ea;color:#4e7f62}
-    .toolbar{display:flex;gap:8px;margin-bottom:10px}.chip{border:1px solid var(--line);background:#fff;color:#6f6a66;padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer}.chip.active{background:#2f2624;color:#fff;border-color:#2f2624}
-    .select{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:12px}
-    .prog{height:6px;background:#ece8e5;border-radius:999px;overflow:hidden;margin-top:6px}.bar{height:100%;background:#82ad91}
-    .btn{border:0;border-radius:10px;padding:10px 12px;cursor:pointer;font-weight:600;background:var(--pri);color:#fff}.btn.secondary{background:#f1ece8;color:#5a514b}.btn.ghost{background:#fff;color:#5a514b;border:1px solid var(--line)}.btn.small{padding:6px 8px;font-size:12px}
-    .tabs{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:#fff}.tab{border:0;background:transparent;padding:10px 4px 12px;color:#8a8581;cursor:pointer}.tab.active{color:#704d3b;font-weight:700}
-    .toast{position:absolute;left:50%;transform:translateX(-50%);bottom:92px;background:#151515;color:#fff;padding:8px 12px;border-radius:999px;font-size:12px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
-    .wrap{position:relative;height:100%}
-    .modal{position:fixed;inset:0;background:rgba(17,22,34,.35);display:flex;align-items:flex-end;justify-content:center;padding:12px;z-index:20}.modal.hidden{display:none}
-    .sheet{width:100%;max-width:390px;background:#fff;border-radius:18px 18px 12px 12px;padding:12px;border:1px solid var(--line)}
-    .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.x{border:0;background:#f3efec;border-radius:8px;padding:6px 8px;cursor:pointer}
-    form{display:grid;gap:10px} input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff} .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  </style>
+  <title>BeautyGuard - 工程版</title>
+  <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
   <div class="phone">
-    <div class="status"><span>17:28</span><span>5G 🔋</span></div>
-    <header class="header"><h1 id="title">BeautyGuard</h1><p id="subtitle">守护每一瓶精华</p></header>
-    <div class="wrap">
-      <main class="content">
-        <section id="today" class="screen">
-          <div class="card">
-            <div class="row"><strong>今日建议</strong><span class="pill p1" id="todayBadge">0 件需处理</span></div>
-            <p class="muted" id="todayAdvice">优先使用临期且已开封产品，避免浪费。</p>
-          </div>
+    <div class="status"><span id="clock">--:--</span><span>5G 🔋</span></div>
+    <header class="header">
+      <h1 id="title">BeautyGuard</h1>
+      <p id="subtitle">双效期管理 · 囤货不浪费</p>
+    </header>
 
-          <div class="toolbar">
-            <button class="chip active" data-mode="simple">简洁模式</button>
-            <button class="chip" data-mode="pro">专业模式</button>
-            <select id="sortBy" class="select">
-              <option value="expiry">临期优先</option>
-              <option value="price">价格优先</option>
-              <option value="recent">最近开封</option>
-            </select>
-          </div>
-
-          <div id="priorityList"></div>
-          <div class="card row"><button class="btn" id="quickAdd">+ 新增单品</button><button class="btn secondary" id="quickOpen">一键标记开封</button></div>
-        </section>
-
-        <section id="stock" class="screen hidden"><div id="stockList"></div></section>
-
-        <section id="stats" class="screen hidden">
-          <div class="card row"><span>本月预计过期金额</span><strong id="lossValue">¥0</strong></div>
-          <div class="card row"><span>库存总件数</span><strong id="countValue">0</strong></div>
-          <div class="card row"><span>已开封占比</span><strong id="openRate">0%</strong></div>
-          <div class="card row"><span>本月已规避浪费</span><strong id="savedValue">¥0</strong></div>
-        </section>
-
-        <section id="me" class="screen hidden">
-          <div class="card"><strong>提醒策略</strong><p class="muted">P0 强提醒；P1 每日一次；P2 每周一次；P3 仅站内。</p><button class="btn ghost small">导出 CSV（高级）</button></div>
-        </section>
-      </main>
-      <div class="toast" id="toast"></div>
-
-      <div id="addModal" class="modal hidden" aria-hidden="true">
-        <div class="sheet">
-          <div class="sheet-head"><strong>新增单品（2步简化）</strong><button class="x" id="closeModal" type="button">关闭</button></div>
-          <form id="addForm">
-            <input name="brand" placeholder="品牌（如：SkinCeuticals）" required />
-            <input name="name" placeholder="品名（如：修丽可 CEF 精华）" required />
-            <div class="grid2"><select name="category"><option>护肤品</option><option>彩妆</option><option>防晒</option></select><select name="season"><option value="all">全年</option><option value="summer">夏季</option><option value="winter">冬季</option></select></div>
-            <div class="grid2"><input name="expiry" type="date" required /><select name="pao"><option value="6">PAO 6M</option><option value="12" selected>PAO 12M</option><option value="24">PAO 24M</option></select></div>
-            <div class="grid2"><input name="price" type="number" min="0" placeholder="价格(元)" /><input name="qty" type="number" min="1" value="1" /></div>
-            <button class="btn" type="submit">保存并加入囤货</button>
-          </form>
-        </div>
-      </div>
-    </div>
+    <main class="content">
+      <section id="screen-inventory" class="screen"></section>
+      <section id="screen-usage" class="screen hidden"></section>
+      <section id="screen-empty" class="screen hidden"></section>
+      <section id="screen-settings" class="screen hidden"></section>
+    </main>
 
     <nav class="tabs">
-      <button class="tab active" data-target="today">囤货</button>
-      <button class="tab" data-target="stock">使用</button>
-      <button class="tab" data-target="stats">空瓶</button>
-      <button class="tab" data-target="me">设置</button>
+      <button class="tab active" data-screen="inventory">囤货</button>
+      <button class="tab" data-screen="usage">使用</button>
+      <button class="tab" data-screen="empty">空瓶</button>
+      <button class="tab" data-screen="settings">设置</button>
     </nav>
   </div>
 
-<script>
-(() => {
-  const state = {
-    mode:'simple',
-    items:[
-      {id:1,brand:'修丽可',name:'CEF 精华',days:21,opened:true,price:1280,qty:1,pao:6,unopenedDays:80,lastUsed:1,season:'all'},
-      {id:2,brand:'兰蔻',name:'小黑瓶精华',days:59,opened:true,price:980,qty:1,pao:6,unopenedDays:120,lastUsed:2,season:'all'},
-      {id:3,brand:'海蓝之谜',name:'精华面霜',days:50,opened:true,price:1800,qty:1,pao:12,unopenedDays:310,lastUsed:3,season:'winter'},
-      {id:4,brand:'YSL',name:'恒久粉底液',days:64,opened:false,price:620,qty:1,pao:12,unopenedDays:240,lastUsed:999,season:'all'}
-    ],
-    nextId:5
-  };
+  <button id="fab" class="fab" title="新增产品">＋</button>
 
-  const screens=[...document.querySelectorAll('.screen')];
-  const tabs=[...document.querySelectorAll('.tab')];
-  const modeChips=[...document.querySelectorAll('[data-mode]')];
-  const sortBy=document.getElementById('sortBy');
-  const toast=(msg)=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)};
-  const level=(d)=>d<=7?'p1':'p2';
-  const levelText=(d)=>d<=7?'临期':'安全';
+  <dialog id="productModal" class="modal">
+    <form id="productForm" method="dialog" class="form">
+      <div class="form-head">
+        <h3>新增产品</h3>
+        <button type="button" id="closeModal" class="ghost">关闭</button>
+      </div>
+      <label>品牌<input name="brand" required placeholder="如：SK-II" /></label>
+      <label>品名<input name="name" required placeholder="如：神仙水" /></label>
+      <div class="grid2">
+        <label>分类
+          <select name="category">
+            <option value="护肤">护肤</option>
+            <option value="彩妆">彩妆</option>
+            <option value="防晒">防晒</option>
+            <option value="身体">身体</option>
+          </select>
+        </label>
+        <label>季节
+          <select name="season">
+            <option value="all">全年</option>
+            <option value="summer">夏季</option>
+            <option value="winter">冬季</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid2">
+        <label>购买日期<input name="purchaseDate" type="date" required /></label>
+        <label>未开封到期<input name="unopenedExpiry" type="date" required /></label>
+      </div>
+      <div class="grid2">
+        <label>是否已开封
+          <select name="opened"><option value="false">未开封</option><option value="true">已开封</option></select>
+        </label>
+        <label>PAO（月）
+          <select name="paoMonths"><option>6</option><option selected>12</option><option>24</option></select>
+        </label>
+      </div>
+      <div class="grid2">
+        <label>开封日期<input name="openedDate" type="date" /></label>
+        <label>价格（元）<input name="price" type="number" min="0" value="0" /></label>
+      </div>
+      <label>库存数量<input name="qty" type="number" min="1" value="1" required /></label>
+      <button class="primary" type="submit">保存</button>
+    </form>
+  </dialog>
 
-  const map={today:['BeautyGuard','守护每一瓶精华'],stock:['使用日志','按最近使用排序'],stats:['空瓶记录','回购洞察与省钱统计'],me:['设置','提醒策略与高级功能']};
-  const title=document.getElementById('title');
-  const subtitle=document.getElementById('subtitle');
-
-  function openScreen(id){
-    screens.forEach(s=>s.classList.toggle('hidden',s.id!==id));
-    tabs.forEach(t=>t.classList.toggle('active',t.dataset.target===id));
-    title.textContent=map[id][0]; subtitle.textContent=map[id][1];
-  }
-
-  function getSorted(items){
-    const s=sortBy.value;
-    return [...items].sort((a,b)=>{
-      if(s==='price') return b.price-a.price;
-      if(s==='recent') return a.lastUsed-b.lastUsed;
-      return a.days-b.days || b.price-a.price;
-    });
-  }
-
-  function render(){
-    const sorted=getSorted(state.items);
-    const top=sorted[0];
-    document.getElementById('todayBadge').textContent=`${sorted.filter(i=>i.days<=30).length} 件需处理`;
-    document.getElementById('todayAdvice').textContent=top?`今天优先使用：${top.brand} ${top.name}（剩余${top.days}天）`:'暂无库存';
-
-    document.getElementById('priorityList').innerHTML=sorted.map(i=>`
-      <article class="card">
-        <div class="row"><strong>${i.brand} ${i.name}</strong><span class="pill ${level(i.days)}">${levelText(i.days)}</span></div>
-        <div class="row muted"><span>${i.opened?'已开封':'未开封'} · ¥${i.price}</span><strong style="color:#6b9d80">剩余 ${i.days} 天</strong></div>
-        ${state.mode==='pro' ? `<div class="muted">PAO：${i.pao}个月<div class="prog"><div class="bar" style="width:${Math.max(5,100-(i.days*1.2))}%"></div></div>未开封：${i.unopenedDays}天<div class="prog"><div class="bar" style="width:${Math.max(5,100-(i.unopenedDays*0.25))}%"></div></div></div>` : ''}
-        <div class="row" style="margin-top:8px"><button class="btn ghost small" data-action="use" data-id="${i.id}">今天用一次</button><button class="btn secondary small" data-action="delay" data-id="${i.id}">延后提醒</button><button class="btn secondary small" data-action="used" data-id="${i.id}">标记空瓶</button></div>
-      </article>
-    `).join('');
-
-    document.getElementById('stockList').innerHTML=sorted.map(i=>`
-      <article class="card row"><div><strong>${i.brand} ${i.name}</strong><p class="muted">最近使用：${i.lastUsed===999?'从未':`${i.lastUsed}天前`}</p></div><span class="pill ${level(i.days)}">${i.days}天</span></article>
-    `).join('');
-
-    const total=state.items.reduce((s,i)=>s+i.qty,0);
-    const opened=state.items.filter(i=>i.opened).length;
-    const loss=state.items.filter(i=>i.days<=30).reduce((s,i)=>s+i.price*0.2,0);
-    const saved=state.items.filter(i=>i.lastUsed<=3).reduce((s,i)=>s+i.price*0.1,0);
-    document.getElementById('countValue').textContent=String(total);
-    document.getElementById('openRate').textContent=state.items.length?`${Math.round((opened/state.items.length)*100)}%`:'0%';
-    document.getElementById('lossValue').textContent=`¥${Math.round(loss)}`;
-    document.getElementById('savedValue').textContent=`¥${Math.round(saved)}`;
-  }
-
-  document.getElementById('priorityList').addEventListener('click',(e)=>{
-    const btn=e.target.closest('button[data-action]'); if(!btn) return;
-    const id=Number(btn.dataset.id); const idx=state.items.findIndex(i=>i.id===id); if(idx<0) return;
-    const item=state.items[idx];
-    if(btn.dataset.action==='use'){ item.lastUsed=0; item.days=Math.max(item.days-1,1); toast(`已记录使用：${item.name}`); }
-    if(btn.dataset.action==='delay'){ item.days+=3; toast(`已延后提醒：${item.name}`); }
-    if(btn.dataset.action==='used'){ state.items.splice(idx,1); toast(`已加入空瓶：${item.name}`); }
-    render();
-  });
-
-  modeChips.forEach(chip=>chip.addEventListener('click',()=>{
-    state.mode=chip.dataset.mode;
-    modeChips.forEach(c=>c.classList.toggle('active',c===chip));
-    render();
-  }));
-  sortBy.addEventListener('change',render);
-
-  tabs.forEach(t=>t.addEventListener('click',()=>openScreen(t.dataset.target)));
-
-  const addModal=document.getElementById('addModal');
-  const showAddModal=()=>{addModal.classList.remove('hidden'); addModal.setAttribute('aria-hidden','false');};
-  const hideAddModal=()=>{addModal.classList.add('hidden'); addModal.setAttribute('aria-hidden','true');};
-  document.getElementById('quickAdd').addEventListener('click',showAddModal);
-  document.getElementById('closeModal').addEventListener('click',hideAddModal);
-  addModal.addEventListener('click',(e)=>{ if(e.target===addModal) hideAddModal(); });
-  document.getElementById('quickOpen').addEventListener('click',()=>{
-    if(!state.items.length) return toast('暂无库存可操作');
-    const i=state.items[0]; i.opened=true; i.days=Math.max(i.days-3,1); i.lastUsed=0; toast(`已标记开封：${i.name}`); render();
-  });
-
-  document.getElementById('addForm').addEventListener('submit',(e)=>{
-    e.preventDefault();
-    const f=new FormData(e.target);
-    state.items.unshift({
-      id:state.nextId++, brand:String(f.get('brand')), name:String(f.get('name')),
-      days:30, opened:true, price:Number(f.get('price')||0), qty:Number(f.get('qty')||1),
-      pao:Number(f.get('pao')||12), unopenedDays:180, lastUsed:0, season:String(f.get('season')||'all')
-    });
-    e.target.reset(); hideAddModal(); openScreen('today'); render(); toast('保存成功，已加入囤货');
-  });
-
-  render();
-  showAddModal();
-})();
-</script>
+  <script type="module" src="src/app.js"></script>
 </body>
 </html>
